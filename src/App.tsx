@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import {
   CURRENT_TAX_BANDS,
+  DEMO_SALARIES,
   LIVING_WAGE,
   NI_ABOVE_UPPER_RATE,
   NI_PRIMARY_RATE,
@@ -278,48 +279,16 @@ const App = () => {
                   £{Math.round(newTakeHome(17000, ubiAmount, taxBands)).toLocaleString()}
                 </td>
               </tr>
-              {[
-                18000,
-                19000,
-                20000,
-                21000,
-                22000,
-                23000,
-                24000,
-                25000,
-                26000,
-                27000,
-                28000,
-                29000,
-                30000,
-                31000,
-                32000,
-                33000,
-                34000,
-                35000,
-                36000,
-                37000,
-                38000,
-                39000,
-                40000,
-                41000,
-                42000,
-                43000,
-                44000,
-                45000,
-                46000,
-                48000,
-                50000,
-                52000,
-                54000,
-                56000,
-                58000,
-                60000,
-                65000,
-                70000,
-              ].map((val) => (
+              {DEMO_SALARIES.map((val, i) => (
                 <tr key={val}>
-                  <td>£{val.toLocaleString()}</td>
+                  <td>
+                    £{val.toLocaleString()}
+                    {i > 0 &&
+                    DEMO_SALARIES[i - 1] < PERCENTILES[50] &&
+                    DEMO_SALARIES[i] > PERCENTILES[50] ? (
+                      <span className="help">Top 50%</span>
+                    ) : null}
+                  </td>
                   <td>£{Math.round(currentTakeHome(val)).toLocaleString()}</td>
                   <td
                     className={
