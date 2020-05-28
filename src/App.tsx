@@ -212,13 +212,17 @@ const App = () => {
       </div>
       <div className="column is-half">
         <div className="field">
-          <h2 className="label">Budget balance</h2>
+          <h2 className="label">Budget {balance < 0 ? "deficit" : "surplus"}</h2>
           <div
             className={`button is-large ${balance < 0 ? "is-danger" : "is-success"} is-fullwidth`}
           >
             {balance < 0 ? "-£" : "£"}
             {Math.round(Math.abs(balance)).toLocaleString()}
           </div>
+          <p className="help">
+            For the time period the tax/spending estimations are based on, the baseline deficit was
+            -£25,500,000,000
+          </p>
         </div>
         <div className="field">
           <h2 className="label">Takehome comparisons</h2>
