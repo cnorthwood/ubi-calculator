@@ -159,7 +159,7 @@ const App = () => {
             </div>
           ) : null}
         </div>
-        <div className="field">
+        <div className="field is-hidden-mobile">
           <h2 className="label">Tax Revenue</h2>
           <table className="table is-fullwidth">
             <thead>
@@ -184,7 +184,7 @@ const App = () => {
             </tbody>
           </table>
         </div>
-        <div className="field">
+        <div className="field is-hidden-mobile">
           <h2 className="label">Government Spending</h2>
           <table className="table is-fullwidth">
             <thead>
