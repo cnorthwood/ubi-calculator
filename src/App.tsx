@@ -17,6 +17,7 @@ import {
   TAXES,
 } from "./data";
 import TaxBandEditor from "./TaxBandEditor";
+import TakeHomeComparison from "./TakeHomeComparison";
 
 function taxPayable(income: number, rate: number, bandStart: number, bandEnd?: number) {
   const incomeOverThreshold = income - bandStart;
@@ -119,7 +120,7 @@ const App = () => {
           </p>
         </div>
         {showUbiNotice ? (
-          <div className="notification is-info">
+          <div className="notification is-primary">
             The default level of UBI is set to equal the full-time income of someone working on the
             Living Wage. Try changing it.
           </div>
@@ -153,7 +154,7 @@ const App = () => {
             }}
           />
           {showTaxBandNotice ? (
-            <div className="notification is-info">
+            <div className="notification is-primary">
               The default tax bands are based around today's tax bands with National Insurance.
               Experiment to raise more money to plug the deficit!
             </div>
@@ -235,106 +236,51 @@ const App = () => {
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td>
-                  £4,918{" "}
-                  <span className="help">
-                    Universal Credit standard allowance - replaced by UBI
-                  </span>
-                </td>
-                <td>£{Math.round(currentTakeHome(4918)).toLocaleString()}</td>
-                <td
-                  className={
-                    newTakeHome(0, ubiAmount, taxBands) > currentTakeHome(4918)
-                      ? "has-text-success"
-                      : "has-text-danger"
-                  }
-                >
-                  £{Math.round(newTakeHome(0, ubiAmount, taxBands)).toLocaleString()}
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  £9,110 <span className="help">Full State Pension - replaced by UBI</span>
-                </td>
-                <td>£{Math.round(currentTakeHome(9110)).toLocaleString()}</td>
-                <td
-                  className={
-                    newTakeHome(0, ubiAmount, taxBands) > currentTakeHome(9110)
-                      ? "has-text-success"
-                      : "has-text-danger"
-                  }
-                >
-                  £{Math.round(newTakeHome(0, ubiAmount, taxBands)).toLocaleString()}
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  £17,000 <span className="help">Full time on minimum wage</span>
-                </td>
-                <td>£{Math.round(currentTakeHome(17000)).toLocaleString()}</td>
-                <td
-                  className={
-                    newTakeHome(17000, ubiAmount, taxBands) > currentTakeHome(17000)
-                      ? "has-text-success"
-                      : "has-text-danger"
-                  }
-                >
-                  £{Math.round(newTakeHome(17000, ubiAmount, taxBands)).toLocaleString()}
-                </td>
-              </tr>
+              <TakeHomeComparison
+                income={4918}
+                newTakeHome={newTakeHome(0, ubiAmount, taxBands)}
+                oldTakeHome={currentTakeHome(4918)}
+                label="Universal Credit standard allowance - replaced by UBI"
+              />
+              <TakeHomeComparison
+                income={9110}
+                newTakeHome={newTakeHome(0, ubiAmount, taxBands)}
+                oldTakeHome={currentTakeHome(9110)}
+                label="Full State Pension - replaced by UBI"
+              />
+              <TakeHomeComparison
+                income={17000}
+                newTakeHome={newTakeHome(17000, ubiAmount, taxBands)}
+                oldTakeHome={currentTakeHome(17000)}
+                label="Full time on minimum wage"
+              />
               {DEMO_SALARIES.map((val, i) => (
-                <tr key={val}>
-                  <td>
-                    £{val.toLocaleString()}
-                    {i > 0 &&
+                <TakeHomeComparison
+                  key={val}
+                  income={val}
+                  newTakeHome={newTakeHome(val, ubiAmount, taxBands)}
+                  oldTakeHome={currentTakeHome(val)}
+                  label={
+                    i > 0 &&
                     DEMO_SALARIES[i - 1] < PERCENTILES[50] &&
-                    DEMO_SALARIES[i] > PERCENTILES[50] ? (
-                      <span className="help">Top 50%</span>
-                    ) : null}
-                  </td>
-                  <td>£{Math.round(currentTakeHome(val)).toLocaleString()}</td>
-                  <td
-                    className={
-                      newTakeHome(val, ubiAmount, taxBands) > currentTakeHome(val)
-                        ? "has-text-success"
-                        : "has-text-danger"
-                    }
-                  >
-                    £{Math.round(newTakeHome(val, ubiAmount, taxBands)).toLocaleString()}
-                  </td>
-                </tr>
+                    DEMO_SALARIES[i] > PERCENTILES[50]
+                      ? "Top 50%"
+                      : undefined
+                  }
+                />
               ))}
-              <tr>
-                <td>
-                  £75,300 <span className="help">Top 5%</span>
-                </td>
-                <td>£{Math.round(currentTakeHome(75300)).toLocaleString()}</td>
-                <td
-                  className={
-                    newTakeHome(75300, ubiAmount, taxBands) > currentTakeHome(75300)
-                      ? "has-text-success"
-                      : "has-text-danger"
-                  }
-                >
-                  £{Math.round(newTakeHome(75300, ubiAmount, taxBands)).toLocaleString()}
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  £166,000 <span className="help">Top 1%</span>
-                </td>
-                <td>£{Math.round(currentTakeHome(166000)).toLocaleString()}</td>
-                <td
-                  className={
-                    newTakeHome(166000, ubiAmount, taxBands) > currentTakeHome(166000)
-                      ? "has-text-success"
-                      : "has-text-danger"
-                  }
-                >
-                  £{Math.round(newTakeHome(166000, ubiAmount, taxBands)).toLocaleString()}
-                </td>
-              </tr>
+              <TakeHomeComparison
+                income={75300}
+                newTakeHome={newTakeHome(75300, ubiAmount, taxBands)}
+                oldTakeHome={currentTakeHome(75300)}
+                label="Top 5%"
+              />
+              <TakeHomeComparison
+                income={166000}
+                newTakeHome={newTakeHome(166000, ubiAmount, taxBands)}
+                oldTakeHome={currentTakeHome(166000)}
+                label="Top 1%"
+              />
             </tbody>
           </table>
           <p className="help">

@@ -11,6 +11,7 @@ const NewTaxBand: FunctionComponent<{ onAdd: (taxBand: TaxBand) => void }> = ({ 
         <div className="control has-icons-right">
           <input
             className="input"
+            style={{ minWidth: "6em" }}
             type="number"
             min={0}
             max={100}
@@ -26,6 +27,7 @@ const NewTaxBand: FunctionComponent<{ onAdd: (taxBand: TaxBand) => void }> = ({ 
         <div className="control has-icons-left">
           <input
             className="input"
+            style={{ minWidth: "8em" }}
             type="number"
             value={newStartBand}
             onChange={(ev) => {
@@ -38,7 +40,7 @@ const NewTaxBand: FunctionComponent<{ onAdd: (taxBand: TaxBand) => void }> = ({ 
       <td />
       <td>
         <button
-          className="button is-text"
+          className="button is-white is-paddingless"
           title="add band"
           onClick={() => {
             onAdd({ rate: newRate / 100, bandStart: newStartBand });
