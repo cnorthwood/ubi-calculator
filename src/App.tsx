@@ -20,70 +20,67 @@ import {
 import TaxBandEditor from "./TaxBandEditor";
 import TakeHomeComparison from "./TakeHomeComparison";
 
-function taxPayable(income: number, rate: number, bandStart: number, bandEnd?: number) {
-  const incomeOverThreshold = income - bandStart;
-  return Math.max(
-    0,
-    (bandEnd ? Math.min(bandEnd - bandStart, incomeOverThreshold) : incomeOverThreshold) * rate,
-  );
+function taxInBand(income: number, rate: number, bandStart: number, bandEnd?: number) {
+  let incomeInBand = Math.max(0, income - bandStart);
+  if (bandEnd) {
+    incomeInBand = Math.min(incomeInBand, bandEnd - bandStart);
+  }
+  return incomeInBand * rate;
 }
 
-function currentTakeHome(income: number) {
-  const weekly = income / 52;
-  const nationalInsurance =
-    Math.min(Math.max(0, weekly - NI_PRIMARY_THRESHOLD), NI_UPPER_EARNINGS_LIMIT) *
-      NI_PRIMARY_RATE +
-    Math.max(0, weekly - NI_UPPER_EARNINGS_LIMIT) * NI_ABOVE_UPPER_RATE;
-  const incomeTax =
-    CURRENT_TAX_BANDS.map(({ rate, threshold }, i) => ({
-      rate,
-      bandStart: threshold,
-      bandEnd: i < CURRENT_TAX_BANDS.length - 1 ? CURRENT_TAX_BANDS[i + 1].threshold : undefined,
-    })).reduce(
-      (a, { rate, bandStart, bandEnd }) => a + taxPayable(income, rate, bandStart, bandEnd),
-      0,
-    ) / 52;
-  return weekly - nationalInsurance - incomeTax;
-}
-
-function newGrossIncome(income: number, weeklyUbiAmount: number) {
-  const nationalInsurance = Math.max(0, income / 52 - NI_SECONDARY_THRESHOLD) * NI_SECONDARY_RATE;
-  return income + (weeklyUbiAmount + nationalInsurance) * 52;
-}
-
-function newTakeHome(income: number, weeklyUbiAmount: number, taxBands: TaxBand[]) {
-  const newGross = newGrossIncome(income, weeklyUbiAmount);
-  const incomeTax = taxBands
+function taxPayable(income: number, taxBands: TaxBand[]) {
+  return taxBands
     .map(({ rate, threshold }, i) => ({
       rate,
       bandStart: threshold,
-      bandEnd: i < CURRENT_TAX_BANDS.length - 1 ? CURRENT_TAX_BANDS[i + 1].threshold : undefined,
+      bandEnd: i < taxBands.length - 1 ? taxBands[i + 1].threshold : undefined,
     }))
     .reduce(
-      (a, { rate, bandStart, bandEnd }) => a + taxPayable(newGross, rate, bandStart, bandEnd),
+      (a, { rate, bandStart, bandEnd }) => a + taxInBand(income, rate, bandStart, bandEnd),
       0,
     );
-  return (newGross - incomeTax) / 52;
 }
 
-function incomeTaxRaised(
+function employeeNationalInsurance(income: number) {
+  const weekly = income / 52;
+  return (
+    Math.min(Math.max(0, weekly - NI_PRIMARY_THRESHOLD), NI_UPPER_EARNINGS_LIMIT) *
+      NI_PRIMARY_RATE +
+    Math.max(0, weekly - NI_UPPER_EARNINGS_LIMIT) * NI_ABOVE_UPPER_RATE
+  );
+}
+
+function employerNationalInsurance(income: number) {
+  return Math.max(0, income / 52 - NI_SECONDARY_THRESHOLD) * NI_SECONDARY_RATE;
+}
+
+function currentWeeklyTakeHome(income: number) {
+  return (income - taxPayable(income, CURRENT_TAX_BANDS)) / 52 - employeeNationalInsurance(income);
+}
+
+function newGrossIncome(income: number, weeklyUbiAmount: number) {
+  return income + (employerNationalInsurance(income) + weeklyUbiAmount) * 52;
+}
+
+function newWeeklyTakeHome(income: number, weeklyUbiAmount: number, taxBands: TaxBand[]) {
+  const newGross = newGrossIncome(income, weeklyUbiAmount);
+  return (newGross - taxPayable(newGross, taxBands)) / 52;
+}
+
+function incomeTaxRaisedAtPercentile(
   medianIncome: number,
-  numberOfPeople: number,
   weeklyUbiAmount: number,
   taxBands: TaxBand[],
 ) {
   const newGross = newGrossIncome(medianIncome, weeklyUbiAmount);
-  const incomeTax = taxBands
-    .map(({ rate, threshold }, i) => ({
-      rate,
-      bandStart: threshold,
-      bandEnd: i < CURRENT_TAX_BANDS.length - 1 ? CURRENT_TAX_BANDS[i + 1].threshold : undefined,
-    }))
-    .reduce(
-      (a, { rate, bandStart, bandEnd }) => a + taxPayable(newGross, rate, bandStart, bandEnd),
-      0,
-    );
-  return incomeTax * numberOfPeople;
+  return taxPayable(newGross, taxBands) * (NUM_UK_TAXPAYERS / 100);
+}
+
+function incomeTaxRaised(weeklyUbiAmount: number, taxBands: TaxBand[]) {
+  return PERCENTILES.reduce(
+    (a, medianIncome) => a + incomeTaxRaisedAtPercentile(medianIncome, weeklyUbiAmount, taxBands),
+    0,
+  );
 }
 
 const App = () => {
@@ -119,16 +116,19 @@ const App = () => {
     window.history.replaceState(
       null,
       "",
-      `?${btoa(JSON.stringify({ v: 1, ubiAmount, ukPopulation, taxBands }))}`,
+      `?${btoa(
+        JSON.stringify({
+          v: 1,
+          ubiAmount,
+          ukPopulation,
+          taxBands: taxBands.map(({ rate, threshold }) => ({ rate, threshold })),
+        }),
+      )}`,
     );
   });
 
   const costOfUbi = ubiAmount * 52 * ukPopulation;
-  const newIncomeTaxRaised = PERCENTILES.reduce(
-    (a, medianIncome) =>
-      a + incomeTaxRaised(medianIncome, NUM_UK_TAXPAYERS / 100, ubiAmount, taxBands),
-    0,
-  );
+  const newIncomeTaxRaised = incomeTaxRaised(ubiAmount, taxBands);
 
   const balance =
     Object.values(TAXES).reduce((a, value) => a + value, 0) -
@@ -274,35 +274,35 @@ const App = () => {
             <thead>
               <tr>
                 <th scope="col">Current Annual Salary</th>
-                <th scope="col">Current Weekly Takehome</th>
-                <th scope="col">New Weekly Takehome</th>
+                <th scope="col">After current Tax/NI</th>
+                <th scope="col">With new tax/UBI</th>
               </tr>
             </thead>
             <tbody>
               <TakeHomeComparison
                 income={4918}
-                newTakeHome={newTakeHome(0, ubiAmount, taxBands)}
-                oldTakeHome={currentTakeHome(4918)}
+                newTakeHome={newWeeklyTakeHome(0, ubiAmount, taxBands)}
+                oldTakeHome={4918 / 52}
                 label="Universal Credit standard allowance - replaced by UBI"
               />
               <TakeHomeComparison
                 income={9110}
-                newTakeHome={newTakeHome(0, ubiAmount, taxBands)}
-                oldTakeHome={currentTakeHome(9110)}
+                newTakeHome={newWeeklyTakeHome(0, ubiAmount, taxBands)}
+                oldTakeHome={9110 / 52}
                 label="Full State Pension - replaced by UBI"
               />
               <TakeHomeComparison
                 income={17000}
-                newTakeHome={newTakeHome(17000, ubiAmount, taxBands)}
-                oldTakeHome={currentTakeHome(17000)}
+                newTakeHome={newWeeklyTakeHome(17000, ubiAmount, taxBands)}
+                oldTakeHome={currentWeeklyTakeHome(17000)}
                 label="Full time on minimum wage"
               />
               {DEMO_SALARIES.map((val, i) => (
                 <TakeHomeComparison
                   key={val}
                   income={val}
-                  newTakeHome={newTakeHome(val, ubiAmount, taxBands)}
-                  oldTakeHome={currentTakeHome(val)}
+                  newTakeHome={newWeeklyTakeHome(val, ubiAmount, taxBands)}
+                  oldTakeHome={currentWeeklyTakeHome(val)}
                   label={
                     i > 0 &&
                     DEMO_SALARIES[i - 1] < PERCENTILES[50] &&
@@ -314,14 +314,14 @@ const App = () => {
               ))}
               <TakeHomeComparison
                 income={75300}
-                newTakeHome={newTakeHome(75300, ubiAmount, taxBands)}
-                oldTakeHome={currentTakeHome(75300)}
+                newTakeHome={newWeeklyTakeHome(75300, ubiAmount, taxBands)}
+                oldTakeHome={currentWeeklyTakeHome(75300)}
                 label="Top 5%"
               />
               <TakeHomeComparison
                 income={166000}
-                newTakeHome={newTakeHome(166000, ubiAmount, taxBands)}
-                oldTakeHome={currentTakeHome(166000)}
+                newTakeHome={newWeeklyTakeHome(166000, ubiAmount, taxBands)}
+                oldTakeHome={currentWeeklyTakeHome(166000)}
                 label="Top 1%"
               />
             </tbody>

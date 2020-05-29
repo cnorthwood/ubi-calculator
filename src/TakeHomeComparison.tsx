@@ -11,17 +11,17 @@ const TakeHomeComparison: FunctionComponent<{
       £{income.toLocaleString()}
       {label ? <span className="help">{label}</span> : null}
     </td>
-    <td>£{Math.round(oldTakeHome).toLocaleString()}</td>
+    <td>£{Math.round(oldTakeHome * 52).toLocaleString()}</td>
     <td>
-      £{Math.round(newTakeHome).toLocaleString()}
+      £{Math.round(newTakeHome * 52).toLocaleString()}
       <div className="is-hidden-mobile">
         {newTakeHome > oldTakeHome ? (
           <span className="tag is-medium is-success">
-            £{Math.round(newTakeHome - oldTakeHome)} better off
+            £{Math.round((newTakeHome - oldTakeHome) * 52).toLocaleString()} better off
           </span>
         ) : (
           <span className="tag is-medium is-danger">
-            £{Math.round(oldTakeHome - newTakeHome)} worse off
+            £{Math.round((oldTakeHome - newTakeHome) * 52).toLocaleString()} worse off
           </span>
         )}
       </div>
