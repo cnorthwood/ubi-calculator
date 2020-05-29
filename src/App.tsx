@@ -71,12 +71,10 @@ function incomeTaxRaised(
 
 const App = () => {
   let storedState: { ubiAmount: number; ukPopulation: number; taxBands: TaxBand[] } | null = null;
-  if (window.location.search) {
-    try {
-      const { ubiAmount, ukPopulation, taxBands } = JSON.parse(atob(window.location.search));
-      storedState = { ubiAmount, ukPopulation, taxBands };
-    } catch (e) {}
-  }
+  try {
+    const { ubiAmount, ukPopulation, taxBands } = JSON.parse(atob(window.location.search.slice(1)));
+    storedState = { ubiAmount, ukPopulation, taxBands };
+  } catch (e) {}
 
   const [ubiAmount, setUbiAmount] = useState<number>(storedState?.ubiAmount ?? LIVING_WAGE);
   const [ukPopulation, setUkPopulation] = useState<number>(
