@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   CURRENT_TAX_BANDS,
   DEMO_SALARIES,
@@ -70,15 +70,35 @@ function incomeTaxRaised(
 }
 
 const App = () => {
-  const [ubiAmount, setUbiAmount] = useState<number>(LIVING_WAGE);
-  const [ukPopulation, setUkPopulation] = useState<number>(POPULATION_OF_UK);
-  const [taxBands, setTaxBands] = useState<TaxBand[]>([
-    { bandStart: 0, bandEnd: 37_500, rate: 0.32 },
-    { bandStart: 37_500, bandEnd: 137_500, rate: 0.52 },
-    { bandStart: 137_500, rate: 0.57 },
-  ]);
+  let storedState: { ubiAmount: number; ukPopulation: number; taxBands: TaxBand[] } | null = null;
+  if (window.location.search) {
+    try {
+      const { ubiAmount, ukPopulation, taxBands } = JSON.parse(atob(window.location.search));
+      storedState = { ubiAmount, ukPopulation, taxBands };
+    } catch (e) {}
+  }
+
+  const [ubiAmount, setUbiAmount] = useState<number>(storedState?.ubiAmount ?? LIVING_WAGE);
+  const [ukPopulation, setUkPopulation] = useState<number>(
+    storedState?.ukPopulation ?? POPULATION_OF_UK,
+  );
+  const [taxBands, setTaxBands] = useState<TaxBand[]>(
+    storedState?.taxBands ?? [
+      { bandStart: 0, bandEnd: 37_500, rate: 0.32 },
+      { bandStart: 37_500, bandEnd: 137_500, rate: 0.52 },
+      { bandStart: 137_500, rate: 0.57 },
+    ],
+  );
   const [showTaxBandNotice, setShowTaxBandNotice] = useState<boolean>(true);
   const [showUbiNotice, setShowUbiNotice] = useState<boolean>(true);
+
+  useEffect(() => {
+    window.history.replaceState(
+      null,
+      "",
+      `?${btoa(JSON.stringify({ ubiAmount, ukPopulation, taxBands }))}`,
+    );
+  });
 
   const costOfUbi = ubiAmount * 52 * ukPopulation;
   const newIncomeTaxRaised = PERCENTILES.reduce(
