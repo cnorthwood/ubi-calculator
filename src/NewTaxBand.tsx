@@ -1,9 +1,9 @@
 import React, { FunctionComponent, useState } from "react";
-import { TaxBand } from "./data";
+import { id, TaxBand } from "./data";
 
 const NewTaxBand: FunctionComponent<{ onAdd: (taxBand: TaxBand) => void }> = ({ onAdd }) => {
-  const [newRate, setNewRate] = useState<number>(0);
-  const [newStartBand, setNewStartBand] = useState<number>(0);
+  const [rate, setRate] = useState<number>(0);
+  const [threshold, setThreshold] = useState<number>(0);
 
   return (
     <tr>
@@ -15,9 +15,9 @@ const NewTaxBand: FunctionComponent<{ onAdd: (taxBand: TaxBand) => void }> = ({ 
             type="number"
             min={0}
             max={100}
-            value={newRate}
+            value={rate}
             onChange={(ev) => {
-              setNewRate(parseInt(ev.currentTarget.value, 10));
+              setRate(parseInt(ev.currentTarget.value, 10));
             }}
           />
           <span className="icon is-small is-right">%</span>
@@ -29,23 +29,23 @@ const NewTaxBand: FunctionComponent<{ onAdd: (taxBand: TaxBand) => void }> = ({ 
             className="input"
             style={{ minWidth: "8em" }}
             type="number"
-            value={newStartBand}
+            step={100}
+            value={threshold}
             onChange={(ev) => {
-              setNewStartBand(parseInt(ev.currentTarget.value, 10));
+              setThreshold(parseInt(ev.currentTarget.value, 10));
             }}
           />
           <span className="icon is-small is-left">£</span>
         </div>
       </td>
-      <td />
       <td>
         <button
           className="button is-white is-paddingless"
           title="add band"
           onClick={() => {
-            onAdd({ rate: newRate / 100, bandStart: newStartBand });
-            setNewRate(0);
-            setNewStartBand(0);
+            onAdd({ id: id(), rate: rate / 100, threshold });
+            setRate(0);
+            setThreshold(0);
           }}
         >
           ➕

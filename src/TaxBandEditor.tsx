@@ -13,14 +13,13 @@ const TaxBandEditor: FunctionComponent<TaxBandEditorProps> = ({ taxBands, onChan
       <thead>
         <tr>
           <th scope="col">Tax rate</th>
-          <th scope="col">Band start</th>
-          <th scope="col">Band end</th>
+          <th scope="col">Threshold</th>
           <th />
         </tr>
       </thead>
       <tbody>
         {taxBands.map((taxBand, i) => (
-          <tr key={i}>
+          <tr key={taxBand.id}>
             <td>
               <div className="control has-icons-right">
                 <input
@@ -46,15 +45,12 @@ const TaxBandEditor: FunctionComponent<TaxBandEditorProps> = ({ taxBands, onChan
                   className="input"
                   style={{ minWidth: "8em" }}
                   type="number"
-                  value={taxBand.bandStart}
-                  min={taxBands[i - 1]?.bandStart ?? 0}
-                  max={taxBands[i].bandEnd}
+                  step={100}
+                  value={taxBand.threshold}
                   onChange={(ev) => {
                     const newTaxBands = taxBands.map((taxBand) => ({ ...taxBand }));
-                    newTaxBands[i].bandStart = parseInt(ev.currentTarget.value, 10);
-                    if (i > 0) {
-                      newTaxBands[i - 1].bandEnd = newTaxBands[i].bandStart;
-                    }
+                    newTaxBands[i].threshold = parseInt(ev.currentTarget.value, 10);
+                    newTaxBands.sort((a, b) => a.threshold - b.threshold);
                     onChange(newTaxBands);
                   }}
                 />
@@ -62,33 +58,11 @@ const TaxBandEditor: FunctionComponent<TaxBandEditorProps> = ({ taxBands, onChan
               </div>
             </td>
             <td>
-              {i < taxBands.length - 1 ? (
-                <div className="control has-icons-left">
-                  <input
-                    className="input"
-                    style={{ minWidth: "8em" }}
-                    type="number"
-                    value={taxBand.bandEnd}
-                    onChange={(ev) => {
-                      const newTaxBands = taxBands.map((taxBand) => ({ ...taxBand }));
-                      newTaxBands[i].bandEnd = parseInt(ev.currentTarget.value, 10);
-                      newTaxBands[i + 1].bandStart = newTaxBands[i].bandEnd!;
-                      onChange(newTaxBands);
-                    }}
-                  />
-                  <span className="icon is-small is-left">£</span>
-                </div>
-              ) : null}
-            </td>
-            <td>
               <button
                 className="delete"
                 title="remove band"
                 onClick={() => {
                   const newTaxBands = taxBands.filter((_, j) => i !== j);
-                  if (newTaxBands.length > 1) {
-                    newTaxBands[newTaxBands.length - 1].bandEnd = undefined;
-                  }
                   onChange(newTaxBands);
                 }}
               />
@@ -98,21 +72,12 @@ const TaxBandEditor: FunctionComponent<TaxBandEditorProps> = ({ taxBands, onChan
         <NewTaxBand
           onAdd={(newTaxBand: TaxBand) => {
             const newTaxBands = taxBands.map((taxBand) => ({ ...taxBand }));
-            if (taxBands.some((taxBand) => taxBand.bandStart === newTaxBand.bandStart)) {
-              newTaxBands.find((taxBand) => taxBand.bandStart === newTaxBand.bandStart)!.rate =
+            if (taxBands.some((taxBand) => taxBand.threshold === newTaxBand.threshold)) {
+              newTaxBands.find((taxBand) => taxBand.threshold === newTaxBand.threshold)!.rate =
                 newTaxBand.rate;
             } else {
               newTaxBands.push(newTaxBand);
-              newTaxBands.sort((a, b) => a.bandStart - b.bandStart);
-              const newIndex = newTaxBands.findIndex(
-                (taxBand) => taxBand.bandStart === newTaxBand.bandStart,
-              )!;
-              if (newIndex < newTaxBands.length - 1) {
-                newTaxBand.bandEnd = newTaxBands[newIndex + 1].bandStart;
-              }
-              if (newIndex > 0) {
-                newTaxBands[newIndex - 1].bandEnd = newTaxBand.bandStart;
-              }
+              newTaxBands.sort((a, b) => a.threshold - b.threshold);
             }
             onChange(newTaxBands);
           }}

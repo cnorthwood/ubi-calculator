@@ -31,15 +31,17 @@ export const NI_SECONDARY_THRESHOLD = 169;
 export const NI_SECONDARY_RATE = 0.138;
 
 export interface TaxBand {
+  id: string;
   rate: number;
-  bandStart: number;
-  bandEnd?: number;
+  threshold: number;
 }
 
+export const id = () => `${Date.now()}_${Math.random()}`;
+
 export const CURRENT_TAX_BANDS: TaxBand[] = [
-  { bandStart: 12_500, bandEnd: 50_000, rate: 0.2 },
-  { bandStart: 50_000, bandEnd: 150_000, rate: 0.4 },
-  { bandStart: 150_000, rate: 0.45 },
+  { id: "basic", threshold: 12_500, rate: 0.2 },
+  { id: "higher", threshold: 50_000, rate: 0.4 },
+  { id: "additional", threshold: 150_000, rate: 0.45 },
 ];
 
 export const PERCENTILES = [

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import {
   CURRENT_TAX_BANDS,
   DEMO_SALARIES,
+  id,
   LIVING_WAGE,
   NI_ABOVE_UPPER_RATE,
   NI_PRIMARY_RATE,
@@ -34,7 +35,11 @@ function currentTakeHome(income: number) {
       NI_PRIMARY_RATE +
     Math.max(0, weekly - NI_UPPER_EARNINGS_LIMIT) * NI_ABOVE_UPPER_RATE;
   const incomeTax =
-    CURRENT_TAX_BANDS.reduce(
+    CURRENT_TAX_BANDS.map(({ rate, threshold }, i) => ({
+      rate,
+      bandStart: threshold,
+      bandEnd: i < CURRENT_TAX_BANDS.length - 1 ? CURRENT_TAX_BANDS[i + 1].threshold : undefined,
+    })).reduce(
       (a, { rate, bandStart, bandEnd }) => a + taxPayable(income, rate, bandStart, bandEnd),
       0,
     ) / 52;
@@ -48,10 +53,16 @@ function newGrossIncome(income: number, weeklyUbiAmount: number) {
 
 function newTakeHome(income: number, weeklyUbiAmount: number, taxBands: TaxBand[]) {
   const newGross = newGrossIncome(income, weeklyUbiAmount);
-  const incomeTax = taxBands.reduce(
-    (a, { rate, bandStart, bandEnd }) => a + taxPayable(newGross, rate, bandStart, bandEnd),
-    0,
-  );
+  const incomeTax = taxBands
+    .map(({ rate, threshold }, i) => ({
+      rate,
+      bandStart: threshold,
+      bandEnd: i < CURRENT_TAX_BANDS.length - 1 ? CURRENT_TAX_BANDS[i + 1].threshold : undefined,
+    }))
+    .reduce(
+      (a, { rate, bandStart, bandEnd }) => a + taxPayable(newGross, rate, bandStart, bandEnd),
+      0,
+    );
   return (newGross - incomeTax) / 52;
 }
 
@@ -62,18 +73,32 @@ function incomeTaxRaised(
   taxBands: TaxBand[],
 ) {
   const newGross = newGrossIncome(medianIncome, weeklyUbiAmount);
-  const incomeTax = taxBands.reduce(
-    (a, { rate, bandStart, bandEnd }) => a + taxPayable(newGross, rate, bandStart, bandEnd),
-    0,
-  );
+  const incomeTax = taxBands
+    .map(({ rate, threshold }, i) => ({
+      rate,
+      bandStart: threshold,
+      bandEnd: i < CURRENT_TAX_BANDS.length - 1 ? CURRENT_TAX_BANDS[i + 1].threshold : undefined,
+    }))
+    .reduce(
+      (a, { rate, bandStart, bandEnd }) => a + taxPayable(newGross, rate, bandStart, bandEnd),
+      0,
+    );
   return incomeTax * numberOfPeople;
 }
 
 const App = () => {
   let storedState: { ubiAmount: number; ukPopulation: number; taxBands: TaxBand[] } | null = null;
   try {
-    const { ubiAmount, ukPopulation, taxBands } = JSON.parse(atob(window.location.search.slice(1)));
-    storedState = { ubiAmount, ukPopulation, taxBands };
+    const { v, ubiAmount, ukPopulation, taxBands } = JSON.parse(
+      atob(window.location.search.slice(1)),
+    );
+    if (v === 1) {
+      storedState = {
+        ubiAmount,
+        ukPopulation,
+        taxBands: taxBands.map((taxBand: TaxBand) => ({ ...taxBand, id: id() })),
+      };
+    }
   } catch (e) {}
 
   const [ubiAmount, setUbiAmount] = useState<number>(storedState?.ubiAmount ?? LIVING_WAGE);
@@ -82,9 +107,9 @@ const App = () => {
   );
   const [taxBands, setTaxBands] = useState<TaxBand[]>(
     storedState?.taxBands ?? [
-      { bandStart: 0, bandEnd: 37_500, rate: 0.32 },
-      { bandStart: 37_500, bandEnd: 137_500, rate: 0.52 },
-      { bandStart: 137_500, rate: 0.57 },
+      { id: "basic", threshold: 12_500, rate: 0.32 },
+      { id: "higher", threshold: 50_000, rate: 0.52 },
+      { id: "additional", threshold: 150_000, rate: 0.55 },
     ],
   );
   const [showTaxBandNotice, setShowTaxBandNotice] = useState<boolean>(true);
@@ -94,7 +119,7 @@ const App = () => {
     window.history.replaceState(
       null,
       "",
-      `?${btoa(JSON.stringify({ ubiAmount, ukPopulation, taxBands }))}`,
+      `?${btoa(JSON.stringify({ v: 1, ubiAmount, ukPopulation, taxBands }))}`,
     );
   });
 
