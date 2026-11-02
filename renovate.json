@@ -3,7 +3,7 @@
   "extends": ["config:recommended"],
   "mode": "full",
   "enabledManagers": ["dockerfile", "github-actions"],
-  "ignoreDeps": ["ghcr.io/cnorthwood/ubi-calculator"],
+  "ignoreDeps": ["node", "ghcr.io/cnorthwood/ubi-calculator"],
   "packageRules": [
     {
       "matchManagers": ["dockerfile"],
