@@ -8,6 +8,6 @@ COPY . /build/
 RUN yarn install
 RUN yarn build
 
-FROM nginx:stable@sha256:aabaaeb9c84fc529520a0be49fd000ebae452de4b46fb9906039b69c21508b07
+FROM nginx:stable@sha256:c2c7e8370da496dc7283497fcd3a0cbe648d7f18b6c62ee1d0675f474d499aeb
 
 COPY --from=builder /build/build /usr/share/nginx/html/ubi
